@@ -345,4 +345,5 @@ M5 <- lm(ABUND ~ LOGAREA + factor(GRAZE), data = Birds)
 summary(M5)
 drop1(M5, test = "F")
 
+# Dont use anova, use drop1 for all situations
 

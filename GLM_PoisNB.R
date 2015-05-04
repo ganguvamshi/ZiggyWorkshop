@@ -190,6 +190,7 @@ coplot(Ampeliscidae ~ OrganicM | fFishing,
 #Start analysis
 
 #Fit the model E(Ampeliscidae ) = mu = exp(alpha + A + B + A:B + C )
+# default family for glm is normal [guassian] (same as lm function)
 M1 <- glm(Ampeliscidae ~ OrganicM * fFishing + fPeriod, 
           data = Benthos,
           family = poisson)
@@ -227,14 +228,15 @@ E1 <- resid(M1, type = "pearson")
 N  <- nrow(Benthos)
 p  <- length(coef(M1))
 sum(E1^2) / (N - p)
-#Just ok!
+#Just ok! if more than 3 we should use quasi posisson
 
 
 summary(M1)
 drop1(M1, test="Chi")
+# in GLM, ML is used for parameter estimation, hence Instead F test, Chi test is used
 #Everything significant. Nothing can be droped
 
-
+# LRT in drop1 result is Liklihood Ratio Test
 #Suppose that the interaction is not significant:
 #Mtest <- glm(Ampeliscidae ~ OrganicM + fFishing  + fPeriod, 
 #          data = Benthos,
@@ -256,6 +258,7 @@ drop1(M1, test="Chi")
 
 F1 <- fitted(M1) #command fitted gives already e^model
 E1 <- resid(M1, type = "pearson")
+#E1 <- rstandard(M1, type="pearson")
 plot(x = F1, 
      y = E1,
      xlab = "Fitted values",
@@ -265,7 +268,7 @@ abline(h = 0, lty = 2)
 #Cook's distance: influential obs
 par(mfrow = c(1, 1))
 plot(M1, which = 4)
-
+# if cooks distance is above 1, we need to remove those rows
 
 #Plot Pearson residuals versus each covariate
 plot(x = Benthos$OrganicM, 
@@ -287,9 +290,7 @@ abline(h = 0, lty = 2)
 
 boxplot(E1 ~ fPeriod, data = Benthos) 
 boxplot(E1 ~ fFishing, data = Benthos) 
-#Looks all ok
-
-
+#Looks all ok, There is no pattern
 
 
 
@@ -431,6 +432,7 @@ plot(x = Benthos$OrganicM , y = Benthos$Ampeliscidae,
      ylab = "Ampeliscidae",
      xlab = "Organic Matter")
 
+# plotting fitted values alonng with CI
 lines(MyData1$OrganicM, exp(P1$fit), lty=1,col=1,lwd=1)
 lines(MyData1$OrganicM, exp(P1$fit + 2*P1$se), lty=2,col=1,lwd=1)
 lines(MyData1$OrganicM, exp(P1$fit - 2*P1$se), lty=2,col=1,lwd=1)
@@ -529,8 +531,6 @@ Overdispersion
  #E. Dependency                => GLMM
  #F. Non-linear relationships  => GAM
  #G. Wrong link function       => Change it
-
-
 
 
 
@@ -659,6 +659,7 @@ MyData$Fit   <- exp(P$fit) #need to do exponential
 MyData$SeUp  <- exp(P$fit + 2 * P$se.fit)
 MyData$SeLow <- exp(P$fit - 2 * P$se.fit)
 
+boxplot(Fit~fFishing, data=MyData)
 
 
 
