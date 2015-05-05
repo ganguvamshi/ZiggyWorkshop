@@ -2,7 +2,7 @@
 title: "Coralline bacteria"
 author: "Shaun Nielsen"
 date: "Wednesday, April 29, 2015"
-output: html_document
+output: pdf_document
 ---
 
 This tutorial runs you through some features of the MVAbund package:  
@@ -61,7 +61,7 @@ The variance increases with the mean hinting at data that comes from a negative 
 
 ```{r}
 # Use the data=bac.treat here to remove unnecessary characters in the output
-dat.nb=manyglm(dat.mv~Species, family="negative.binomial", data=bac.treat)
+dat.nb = manyglm(dat.mv~Species, family="negative.binomial", data=bac.treat)
 ```
 
 To check how well the model fits the data a residual plot is used. It has been suggested to make a few of these since a randomisation procedure is used in MVabund.
@@ -76,10 +76,9 @@ plot(dat.nb,n.vars=15)
 
 No obvious pattern among multiple plots - a good model fit.  
 
-An ANOVA is then carried out.
-
+An ANOVA is then carried out. This is similar to drop1 which is done before
 ```{r}
-dat.aov=anova(dat.nb,nBoot=100,p.uni="adjusted") # used nBoot = 100 for trial, 999 for publication
+dat.aov=anova(dat.nb,nBoot=1000,p.uni="adjusted") # used nBoot = 100 for trial, 999 for publication
 
 dat.aov$table # multivariate table
 ```
@@ -134,6 +133,6 @@ dat.nb.sum
 dat.nb.sum$est # estimates/coefficents
 
 dat.nb.sum$est.stderr # SE of estimates
-
+# this is log link , so we need to exp to get real std errors
 dat.nb.sum$uni.p # p values
 ```
