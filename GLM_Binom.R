@@ -25,12 +25,12 @@ TF <- read.table(file = "Trifur.txt",
 names(TF)
 str(TF)
 # 'data.frame':	155 obs. of  6 variables:
- # $ ID    : int  107 108 109 111 112 113 114 115 116 117 ...
- # $ Area  : int  1 1 1 1 1 1 1 1 1 1 ...
- # $ LT    : num  31.5 34.5 39 28.5 36 34.5 34 32.5 31.5 33 ...
- # $ Weight: int  380 470 696 248 500 508 478 400 468 478 ...
- # $ Sex   : int  1 2 2 2 2 2 2 1 2 1 ...
- # $ Trifur: int  0 0 0 0 0 0 0 0 0 0 ...
+# $ ID    : int  107 108 109 111 112 113 114 115 116 117 ...
+# $ Area  : int  1 1 1 1 1 1 1 1 1 1 ...
+# $ LT    : num  31.5 34.5 39 28.5 36 34.5 34 32.5 31.5 33 ...
+# $ Weight: int  380 470 696 248 500 508 478 400 468 478 ...
+# $ Sex   : int  1 2 2 2 2 2 2 1 2 1 ...
+# $ Trifur: int  0 0 0 0 0 0 0 0 0 0 ...
 
 
 
@@ -62,9 +62,9 @@ library(lattice)  #For fancy multipanel graphs
 dotchart(TF$Trifur) #just useful to check data is 0s or 1s
 
 dotplot(as.matrix(TF[,c("LT", "Weight")]), 
-      groups=FALSE,
-      strip = strip.custom(bg = 'white',
-            par.strip.text = list(cex = 0.8)),
+        groups=FALSE,
+        strip = strip.custom(bg = 'white',
+                             par.strip.text = list(cex = 0.8)),
         scales = list(x = list(relation = "free"),
                       y = list(relation = "free"),
                       draw = FALSE),
@@ -104,10 +104,10 @@ table(TF$Sex, TF$Area, TF$Trifur)
 #########################################################
 #Start analysis
 M1 <- glm(Trifur ~ factor(Sex) + LT + factor(Area) +
-                   factor(Sex) : LT + 
-                   factor(Sex) : factor(Area),
-                   family=binomial,
-                   data = TF)
+            factor(Sex) : LT + 
+            factor(Sex) : factor(Area),
+          family=binomial,
+          data = TF)
 
 # some have only 1/2 replicates, so three way interactions are omitted.
 
@@ -234,7 +234,7 @@ legend("topleft",
        lty = c(1,2,3,1,2,3),
        cex = 0.7,
        lwd = c(3,3,3,3,3,3))
-       
+
 text(40, 0.25, "CI ??")
 #######################################################
 
@@ -248,12 +248,12 @@ P.11<-predict(M2, newdata=MyData1.1, type="link", se = TRUE)
 
 lines(MyData1.1$LT, exp(P.11$fit) / (1 + exp(P.11$fit)),col=1,lwd=3)
 lines(MyData1.1$LT, exp(P.11$fit + 1.96 * P.11$se.fit) / 
-                    (1 + exp(P.11$fit + 1.96 * P.11$se.fit)),                        
-                    col=1)
+        (1 + exp(P.11$fit + 1.96 * P.11$se.fit)),                        
+      col=1)
 
 lines(MyData1.1$LT, exp(P.11$fit - 1.96 * P.11$se.fit) / 
-                    (1 + exp(P.11$fit - 1.96 * P.11$se.fit)),                        
-                    col=1)
+        (1 + exp(P.11$fit - 1.96 * P.11$se.fit)),                        
+      col=1)
 
 
 #and the same for other Area/Sex combinations..

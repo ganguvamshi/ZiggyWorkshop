@@ -2,7 +2,7 @@
 
 #Set the working directory and import the data
 
-setwd("/Users/ziggy/Documents/R/SCELSE")
+setwd("/Users/vamshidhar/Documents/OneDrive/github/ZiggyWorkshop")
 KW <- read.table(file = "pollen.txt", 
                  header = TRUE, 
                  dec = ".")
@@ -10,7 +10,7 @@ KW <- read.table(file = "pollen.txt",
 names(KW)
 #[1]  "Time"      "Hive"      "Treatment" "Dandelion"
 str(KW)
-
+ 
 #Model the number of Dandelion pollen as a function
 #of time, treatment (3 food sources), the interaction between time
 #and treatment, and a hive effect.
@@ -50,6 +50,8 @@ xyplot(Dandelion ~ Time | Treatment,
                      x = list(relation = "same"),
                      y = list(relation = "same"))
 )
+
+#V : lines represent different hives. There is some drastic diff between hives (random effect)
 ######################################################
 
 
@@ -63,13 +65,46 @@ xyplot(Dandelion ~ Time | Treatment,
 
 M1 <- glmer(Dandelion ~ Time * Treatment + (1|fHive),
             data = KW, 
-            family = poisson)
+            family = poisson) # random effect is within (), poisson becaue of counts
 print(summary(M1), digits = 2, signif.stars=FALSE)
+# Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+# Family: poisson  ( log )
+# Formula: Dandelion ~ Time * Treatment + (1 | fHive)
+# Data: KW
+# 
+# AIC      BIC   logLik deviance df.resid 
+# 1035.6   1050.3   -510.8   1021.6       53 
+# 
+# Scaled residuals: 
+#   Min     1Q Median     3Q    Max 
+# -6.85  -1.91  -0.12   1.98   7.88 
+# 
+# Random effects:
+#   Groups Name        Variance Std.Dev.
+# fHive  (Intercept) 1        1             ## weird that variance and std.dev is 1
+# Number of obs: 60, groups:  fHive, 15
+# 
+# Fixed effects:
+#   Estimate Std. Error z value Pr(>|z|)
+# (Intercept)              3.232      0.463     7.0    3e-12
+# Time                    -0.045      0.026    -1.8    0.080
+# TreatmentProtein         2.043      0.650     3.1    0.002
+# TreatmentSyrup           1.804      0.650     2.8    0.005
+# Time:TreatmentProtein   -0.360      0.035   -10.4   <2e-16
+# Time:TreatmentSyrup     -0.074      0.030    -2.4    0.015
+# 
+# Correlation of Fixed Effects:
+#   (Intr) Time   TrtmnP TrtmnS Tm:TrP
+# Time        -0.137                            
+# TretmntPrtn -0.712  0.097                     
+# TretmntSyrp -0.712  0.098  0.507              
+# Tm:TrtmntPr  0.102 -0.747 -0.120 -0.073       
+# Tm:TrtmntSy  0.117 -0.852 -0.083 -0.113  0.636
 
 #Check for overdispersion
 E1 <- resid(M1, type = "pearson")
 N  <- nrow(KW)
-p  <- length(fixef(M1)) + 1
+p  <- length(fixef(M1)) + 1  # +1 because of 1 Random effect 
 Overdispersion <- sum(E1^2) / (N - p)
 Overdispersion
 
@@ -109,7 +144,6 @@ dotchart(KW$Dandelion)
 #E. Correlation
 #Do we have the spatial position of the hives? No
 
-
 #F. Non-linear patterns   
 #
 plot(x = KW$Time,
@@ -130,7 +164,8 @@ drop1(M2A, test = "Chi")  #Doesn't work in my R version
 
 #Alternativaly...use this:
 #Install glmmADMB: 
-#Go to the web-page: http://glmmadmb.r-forge.r-project.org/
+#Go to the web-page: 
+#install.packages("glmmADMB", repos="http://r-forge.r-project.org", type="source")
 #Go for the second option in the web-page
 
 
@@ -144,11 +179,10 @@ summary(M2)
 E2 <- resid(M2, type = "pearson")
 
 #Overdisp from glmm adnb
-p <- 6 + 1 + 1  #6 betas, 1 sigma, 1 k
+p <- length(fixef(M2)) + 1 + 1  #6 betas, 1 sigma, 1 k
 Overdispersion2 <-sum(E2^2) / (N - p)
 Overdispersion2
-
-
+# look under dispersed. but looks fine 
 
 #Step 2: Is everthing significant?
 summary(M2)
@@ -156,7 +190,8 @@ drop1(M2, test = "Chi")  #Ah...but you need sub-models with the same k!
                          #Trouble.
                       ### You are not using the same k in both models, therefore its not just the interaction you are testing
 #Zuur et al. (2012a): If not the same k, then p value slightly wrong                            
-    
+# Not only testing for interaction, but testing for also dispersion (k) so need to be careful
+
 #Drop the interaction                         
 M3 <- glmmadmb(Dandelion ~ Time + Treatment, 
              random =~ 1|fHive, 
@@ -170,14 +205,13 @@ M4 <- glmmadmb(Dandelion ~ Time,
              family="nbinom", data=KW)
 summary(M4)
 drop1(M4, test = "Chi")
-
+# if p values are aroud the threshold (0.05) give it a check as p values are just estimates not exact values
 
 ############################################
 #Step 3: Explain what it all means
 summary(M4)
 #Task: Write down the estimated model
 #
-
 
 #Sketch the fitted values
 betas   <- fixef(M4)  #betas
@@ -189,11 +223,15 @@ k       <- alpha      #(this may be better to avoid confusion)
 #Re      <- as.numeric(as.factor(KW$fHive))
 
 #Now we can calculate fitted values
+# (predict(type="link")) doing it manually
 MyData <- data.frame(Time = c(1,2,3,4))
 X <- model.matrix(~ Time, data = MyData)
-MyData$eta <- X %*% betas
-
+MyData$eta <- X %*% betas # estimated values
 MyData$SE <- sqrt(diag(X %*% Covbeta %*% t(X)))
+MyData$etaRes <- exp(MyData$eta) # transform back to original (type="response')
+MyData$lowSE <- exp(MyData$eta - 1.96 * MyData$SE) #(se=TRUE)
+MyData$highSE <- exp(MyData$eta + 1.96 * MyData$SE) # (se=TRUE)
+
 MyData
 
 plot(x = KW$Time, 
@@ -201,17 +239,13 @@ plot(x = KW$Time,
      xlab = "Time",
      ylab = "Dandelion")
 lines(x = MyData$Time,
-      y = exp(MyData$eta),
+      y = MyData$etaRes,
       lwd = 2)
 
 lines(x = MyData$Time,
-      y = exp(MyData$eta + 1.96 * MyData$SE),
+      y = MyData$highSE,
       lty = 2)
 
 lines(x = MyData$Time,
-      y = exp(MyData$eta - 1.96 * MyData$SE),
+      y = MyData$lowSE,
       lty = 2)
-      
-      
-
-      
