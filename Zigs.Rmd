@@ -1,0 +1,139 @@
+---
+title: "Coralline bacteria"
+author: "Shaun Nielsen"
+date: "Wednesday, April 29, 2015"
+output: html_document
+---
+
+This tutorial runs you through some features of the MVAbund package:  
+
+http://cran.r-project.org/web/packages/mvabund/  
+
+#### Loading data
+
+Coralline.bacteria.RData is a data list that has two dataframes including:  
+
+1) Counts of bacterial classes on two species of coralline algae -"bac.class"  
+2) Sample information - "bac.treat"  
+
+Load the list and extract the two data frames.
+
+```{r}
+setwd("/Users/vamshidhar/Documents/OneDrive/github/ZiggyWorkshop")
+load("Corallina.bacteria.RData")
+bac.class=coralline.bac$bac.class
+bac.treat=coralline.bac$bac.treat
+```
+
+#### Installing MVAbund
+
+```{r, eval=F}
+install.packages('mvabund') # Run once only to download to the computer
+```
+```{r}
+library('mvabund') # Load the package
+```
+
+#### Using MVabund
+
+First make an MVabund object from your count data frame.
+
+```{r}
+dat.mv=mvabund(bac.class)
+```
+
+Mvabund has some plotting functions. It does the job but it very raw. There are other ways to do get better looking figures, but at this stage we just want to see the data.
+
+```{r, fig.height=5,fig.width=10}
+plot(dat.mv~bac.treat$Species,cex.axis=0.55) # Raw data plot
+
+plot(dat.mv~bac.treat$Species,type="bx",cex.axis=0.55) # Box plot
+```
+ can add transformation="none"
+
+We will check the mean variance relationship which will dictate what kind of model to use.
+
+```{r,fig.height=5,fig.width=5}
+meanvar.plot(dat.mv~bac.treat$Species,pch=19)
+```
+
+The variance increases with the mean hinting at data that comes from a negative binomial distribution.
+
+```{r}
+# Use the data=bac.treat here to remove unnecessary characters in the output
+dat.nb=manyglm(dat.mv~Species, family="negative.binomial", data=bac.treat)
+```
+
+To check how well the model fits the data a residual plot is used. It has been suggested to make a few of these since a randomisation procedure is used in MVabund.
+
+```{r, fig.height=5,fig.width=5}
+plot(dat.nb,n.vars=15) # involves some randomisation, repeat it a couple of times
+
+plot(dat.nb,n.vars=15)
+
+plot(dat.nb,n.vars=15) 
+```
+
+No obvious pattern among multiple plots - a good model fit.  
+
+An ANOVA is then carried out.
+
+```{r}
+dat.aov=anova(dat.nb,nBoot=100,p.uni="adjusted") # used nBoot = 100 for trial, 999 for publication
+
+dat.aov$table # multivariate table
+```
+
+We can see the is a difference in the multivariate test statistic. We would then ask which variables constituted to this effect.  
+
+We can look at test statistics and p values here. Note that the output is quite horrible here given the long variable names. A good idea is to plot any one of these to see how they behave.
+
+```{r,fig.height=5,fig.width=5}
+dat.aov$uni.test # univariate test statistics
+
+dat.aov$uni.p # univariate adjusted p values, note we are interested in row 2
+
+any(dat.aov$uni.p[2,]<0.05) # so some bacterial classes differed between species
+
+plot(sort(dat.aov$uni.p[2,]), main="Sorted univariate P values")
+
+abline(h=0.05, lty=2, col="red") 
+```
+
+Around 5-6 classes around p = 0.05. Who are these?
+
+```{r}
+diffs=which(dat.aov$uni.p[2,]<0.1) # ask for < 0.1 so we catch the group slightly above 0.05
+
+diffs
+```
+numbers here are column numbers in data.frame
+
+What proportion did these groups have on the multivariate test statistic?
+
+```{r}
+sum(dat.aov$uni.test[2,diffs])/sum(dat.aov$uni.test[2,])*100
+```
+
+About 56 %. We can then plot the abundances of only these groups.
+
+```{r,fig.height=5,fig.width=10}
+palette('default') # Mvabund screws your colour palette up, so reset
+
+plot(dat.mv~bac.treat$Species, var.subset=diffs,
+     type="bx",cex.axis=0.55)
+```
+
+Mvabund gives model summaries too, note it calculates p values by bootstrapping so keep this in mind for timing.
+
+```{r}
+dat.nb.sum=summary(dat.nb, nBoot=100,p.uni="adjusted")
+
+dat.nb.sum
+
+dat.nb.sum$est # estimates/coefficents
+
+dat.nb.sum$est.stderr # SE of estimates
+
+dat.nb.sum$uni.p # p values
+```
