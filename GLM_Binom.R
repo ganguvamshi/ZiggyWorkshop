@@ -108,6 +108,9 @@ M1 <- glm(Trifur ~ factor(Sex) + LT + factor(Area) +
                    factor(Sex) : factor(Area),
                    family=binomial,
                    data = TF)
+
+# some have only 1/2 replicates, so three way interactions are omitted.
+
 summary(M1) #IF get a WARNING message, Google Quasiseparation (maybe all males have the parasites, not good for model)         
 
 #Model selection                           
@@ -124,7 +127,8 @@ summary(M2)
 
 
 #binary data cannot be overdispersed in general, so not check this
-
+# although for poisson, mean=variance, but still there could be some overdispersion (variance is greater than mean)
+# so we check for overdispersion for poisson.if overdispersed use neg binomial.
 ##########################################
 #Model validation:
 par(mfrow = c(2, 2))
@@ -196,6 +200,8 @@ summary(M2)
 
 
 range(TF$LT)
+#V: never extrapolate, always stay within the range
+# create some fake data sets
 MyData1.1<-data.frame(LT=seq(24,42), Sex=1, Area=1)
 MyData1.2<-data.frame(LT=seq(24,42), Sex=1, Area=2)
 MyData1.3<-data.frame(LT=seq(24,42), Sex=1, Area=3)
@@ -208,8 +214,8 @@ P.12<-predict(M2, newdata=MyData1.2, type="response")
 P.13<-predict(M2, newdata=MyData1.3, type="response")
 P.21<-predict(M2, newdata=MyData2.1, type="response")
 P.22<-predict(M2, newdata=MyData2.2, type="response")
-P.23<-predict(M2, newdata=MyData2.3, type="response")
-
+P.23<-predict(M2, newdata=MyData2.3, type ="response")
+#V: if we want stand errors for confidence Intervals, we need type="link" also
 
 #win.graph()   or    quartz() for Mac
 plot(x=TF$LT, y=TF$Trifur,
@@ -237,6 +243,8 @@ text(40, 0.25, "CI ??")
 #the appropriate link function (for Poisson and NegBinom = exp())
 
 P.11<-predict(M2, newdata=MyData1.1, type="link", se = TRUE)
+# type = "link" doesnt do exponential convertion
+# we need to do it manually while plotting 
 
 lines(MyData1.1$LT, exp(P.11$fit) / (1 + exp(P.11$fit)),col=1,lwd=3)
 lines(MyData1.1$LT, exp(P.11$fit + 1.96 * P.11$se.fit) / 
