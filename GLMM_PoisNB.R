@@ -1,5 +1,5 @@
 ## GLMM Poisson_Neg Binomial
-
+## GLMS are bad when random effect size is low (2), May be 3 is fine
 #Set the working directory and import the data
 
 setwd("/Users/vamshidhar/Documents/OneDrive/github/ZiggyWorkshop")
